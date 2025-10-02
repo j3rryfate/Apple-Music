@@ -16,8 +16,8 @@ RUN apt-get update && apt-get install -y \
     tar \
     && rm -rf /var/lib/apt/lists/*
 
-# Stable URLs for source code and binaries
-ENV GPAC_URL https://download.gpac.io/latest/linux64/gpac.tar.gz
+# Use verified, stable URLs
+ENV GPAC_URL https://github.com/gpac/gpac/releases/download/v2.2.1/gpac-2.2.1-rev-master-linux64-static.tar.gz
 ENV BENTO4_SOURCE_URL https://github.com/axiomatic-systems/Bento4/archive/refs/tags/v1.6.0-641.zip
 
 # Download, unzip, and COMPILE Bento4 from source
@@ -28,10 +28,10 @@ RUN curl -sSL ${BENTO4_SOURCE_URL} -o bento4_source.zip \
     && cmake --build build --target mp4decrypt --config Release \
     && mv build/mp4decrypt /build/mp4decrypt
 
-# Download and extract GPAC binary
+# Download and extract GPAC binary (with new URL and corrected path)
 RUN curl -sSL ${GPAC_URL} -o gpac.tar.gz \
     && tar -xzf gpac.tar.gz \
-    && mv ./bin/gcc/MP4Box /build/MP4Box
+    && mv ./bin/MP4Box /build/MP4Box
 
 
 # =================================================================

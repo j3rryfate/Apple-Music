@@ -6,3 +6,4 @@ pywidevine
 pyyaml
 yt-dlp
 python-telegram-bot
+mutagen 

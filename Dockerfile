@@ -6,8 +6,8 @@ FROM debian:bookworm-slim as builder
 WORKDIR /build
 
 # Environment variables for tool URLs
-ENV BENTO4_VERSION 1.6.0-642
-ENV BENTO4_URL https://github.com/axiomatic-systems/Bento4/releases/download/v${BENTO4_VERSION}/Bento4-SDK-${BENTO4_VERSION}-x86_64-unknown-linux.zip
+ENV BENTO4_VERSION 1.6.0-641
+ENV BENTO4_URL https://www.bento4.com/downloads/Bento4-SDK-${BENTO4_VERSION}-x86_64-linux.zip
 ENV GPAC_URL https://download.gpac.io/latest/linux64/gpac.tar.gz
 
 # Install only the necessary tools for downloading and extracting
@@ -15,15 +15,14 @@ RUN apt-get update && apt-get install -y curl unzip tar && rm -rf /var/lib/apt/l
 
 # Download and extract Bento4, placing the required binaries in the workdir
 RUN curl -sSL ${BENTO4_URL} -o bento4.zip \
-    && unzip bento4.zip \
-    && mv Bento4-SDK-${BENTO4_VERSION}-x86_64-unknown-linux/bin/mp4decrypt . \
-    && mv Bento4-SDK-${BENTO4_VERSION}-x86_64-unknown-linux/bin/mp4info .
+    && (unzip bento4.zip || { echo "Failed to unzip bento4.zip"; exit 1; }) \
+    && mv Bento4-SDK-${BENTO4_VERSION}-x86_64-linux/bin/mp4decrypt . \
+    && mv Bento4-SDK-${BENTO4_VERSION}-x86_64-linux/bin/mp4info .
 
 # Download and extract GPAC, placing the required binary in the workdir
 RUN curl -sSL ${GPAC_URL} -o gpac.tar.gz \
     && tar -xzf gpac.tar.gz \
     && mv ./bin/gcc/MP4Box .
-
 
 # =================================================================
 # Stage 2: Final application image

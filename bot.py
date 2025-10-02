@@ -25,8 +25,6 @@ from telegram.ext import (
 )
 
 # Import necessary components from gamdl
-# Assuming the gamdl logic can be triggered by calling the main function from cli.py
-# We will create a wrapper function to call it.
 from gamdl.cli import main as gamdl_main
 from gamdl.downloader import Downloader
 from gamdl.apple_music_api import AppleMusicApi
@@ -165,6 +163,8 @@ async def download_wrapper(url: str, output_path: Path, extra_args: list = None)
     sys.argv = [
         "gamdl",
         "-o", str(output_path),
+        # The --remux-mode 'mp4box' is removed to use the default 'ffmpeg'
+        # which creates more compatible files for Telegram's player.
         *extra_args,
         url,
     ]

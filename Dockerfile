@@ -1,29 +1,36 @@
-# Use a more stable and complete Python image for better package availability
+# Use a stable Python image
 FROM python:3.11-bookworm
 
-# Set the working directory in the container
+# Set the working directory
 WORKDIR /app
 
-# Define Bento4 version for easy updates
+# Environment variables for tool versions and URLs
 ENV BENTO4_VERSION 1.6.0-640
 ENV BENTO4_URL https://www.bento4.com/downloads/Bento4-SDK-${BENTO4_VERSION}.x86_64-unknown-linux.zip
+ENV GPAC_URL https://download.gpac.io/latest/linux64/gpac.tar.gz
 
-# Install system dependencies, including tools to download and extract Bento4
+# Install base dependencies (removed gpac from apt)
+# Added tar for extracting gpac
 RUN apt-get update && apt-get install -y \
     ffmpeg \
-    gpac \
     rclone \
     zip \
     wget \
     unzip \
+    tar \
     && rm -rf /var/lib/apt/lists/*
 
-# Download, extract, and install Bento4 binaries (for mp4decrypt)
+# Download, extract, and install Bento4 (for mp4decrypt)
 RUN wget -q ${BENTO4_URL} -O bento4.zip \
     && unzip bento4.zip \
     && cp Bento4-SDK-${BENTO4_VERSION}.x86_64-unknown-linux/bin/mp4decrypt /usr/local/bin/ \
-    && cp Bento4-SDK-${BENTO4_VERSION}.x86_64-unknown-linux/bin/mp4info /usr/local/bin/ \
     && rm -rf bento4.zip Bento4-SDK-*
+
+# Download, extract, and install GPAC (for MP4Box)
+RUN wget -q ${GPAC_URL} -O gpac.tar.gz \
+    && tar -xzf gpac.tar.gz \
+    && cp ./bin/gcc/MP4Box /usr/local/bin/ \
+    && rm -rf gpac.tar.gz ./bin ./include ./lib ./share
 
 # Copy and install Python requirements
 COPY requirements.txt .

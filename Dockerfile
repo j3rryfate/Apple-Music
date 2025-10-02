@@ -8,10 +8,12 @@ WORKDIR /app
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install Python 3.11, pip, and prerequisites for adding PPAs
+# ADDED python3-apt to fix the 'apt_pkg' module not found error
 RUN apt-get update && \
     apt-get install -y \
     python3.11 \
     python3-pip \
+    python3-apt \
     python3.11-dev \
     software-properties-common \
     && rm -rf /var/lib/apt/lists/*
@@ -21,7 +23,7 @@ RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
     pip3 install --no-cache-dir --upgrade pip
 
 # Add the PPA for bento4 and install all required application tools
-RUN add-apt-repository ppa:unifreq/ppa && \
+RUN add-apt-repository -y ppa:unifreq/ppa && \
     apt-get update && \
     apt-get install -y \
     ffmpeg \

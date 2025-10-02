@@ -1,28 +1,38 @@
 # =================================================================
-# Stage 1: Builder for downloading and extracting external binaries
+# Stage 1: Builder
+# This stage compiles Bento4 from source and downloads GPAC
 # =================================================================
-FROM debian:bookworm-slim as builder
+FROM debian:bookworm as builder
 
 WORKDIR /build
 
-# Environment variables for tool URLs
-ENV BENTO4_VERSION 1.6.0-641
-ENV BENTO4_URL https://www.bento4.com/downloads/Bento4-SDK-${BENTO4_VERSION}-x86_64-linux.zip
+# Install build dependencies for Bento4, plus download tools
+RUN apt-get update && apt-get install -y \
+    g++ \
+    cmake \
+    python3-dev \
+    curl \
+    unzip \
+    tar \
+    && rm -rf /var/lib/apt/lists/*
+
+# Stable URLs for source code and binaries
 ENV GPAC_URL https://download.gpac.io/latest/linux64/gpac.tar.gz
+ENV BENTO4_SOURCE_URL https://github.com/axiomatic-systems/Bento4/archive/refs/tags/v1.6.0-641.zip
 
-# Install only the necessary tools for downloading and extracting
-RUN apt-get update && apt-get install -y curl unzip tar && rm -rf /var/lib/apt/lists/*
+# Download, unzip, and COMPILE Bento4 from source
+RUN curl -sSL ${BENTO4_SOURCE_URL} -o bento4_source.zip \
+    && unzip bento4_source.zip \
+    && cd Bento4-1.6.0-641 \
+    && cmake -B build -S . \
+    && cmake --build build --target mp4decrypt --config Release \
+    && mv build/mp4decrypt /build/mp4decrypt
 
-# Download and extract Bento4, placing the required binaries in the workdir
-RUN curl -sSL ${BENTO4_URL} -o bento4.zip \
-    && (unzip bento4.zip || { echo "Failed to unzip bento4.zip"; exit 1; }) \
-    && mv Bento4-SDK-${BENTO4_VERSION}-x86_64-linux/bin/mp4decrypt . \
-    && mv Bento4-SDK-${BENTO4_VERSION}-x86_64-linux/bin/mp4info .
-
-# Download and extract GPAC, placing the required binary in the workdir
+# Download and extract GPAC binary
 RUN curl -sSL ${GPAC_URL} -o gpac.tar.gz \
     && tar -xzf gpac.tar.gz \
-    && mv ./bin/gcc/MP4Box .
+    && mv ./bin/gcc/MP4Box /build/MP4Box
+
 
 # =================================================================
 # Stage 2: Final application image
@@ -31,24 +41,23 @@ FROM python:3.11-bookworm
 
 WORKDIR /app
 
-# Install main application system dependencies
+# Install only the necessary RUNTIME system dependencies
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     rclone \
     zip \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the pre-built binaries from the builder stage into the final image's PATH
+# Copy the compiled/downloaded binaries from the builder stage
 COPY --from=builder /build/mp4decrypt /usr/local/bin/
-COPY --from=builder /build/mp4info /usr/local/bin/
 COPY --from=builder /build/MP4Box /usr/local/bin/
 
 # Copy and install Python requirements
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application's code
+# Copy the application code
 COPY . .
 
-# Command to run the bot
+# Run the bot
 CMD ["python", "bot.py"]
